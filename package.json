@@ -1,0 +1,23 @@
+{
+  "name": "efficientdet-js",
+  "version": "0",
+  "description": "An EfficientDet wrapper for js.",
+  "main": "index.js",
+  "author": "ely-s",
+  "license": "MIT",
+  "dependencies": {
+    "@tensorflow/tfjs": "^1.5.1",
+    "babel-polyfill": "^6.26.0"
+  },
+  "scripts": {
+    "dev": "parcel index.html",
+    "build": "parcel build index.html"
+  },
+  "staticFiles": {
+    "staticPath": "static",
+    "watcherGlob": "**"
+  },
+  "devDependencies": {
+    "typescript": "^3.7.4"
+  }
+}
