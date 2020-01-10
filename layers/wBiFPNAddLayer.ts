@@ -7,6 +7,8 @@ export declare interface wBiFPNAddArgs extends LayerArgs {
 }
 
 export class wBiFPNAdd extends tf.layers.Layer {
+    static className  = 'wBiFPNAdd';
+
     private epsilon: number
     private w: LayerVariable
     // layer weights is named w for consistency with the python implementaiton

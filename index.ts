@@ -1,40 +1,21 @@
 import * as tf from '@tensorflow/tfjs';
-import { Activation } from '@tensorflow/tfjs-layers/dist/activations';
 
 import "babel-polyfill"
-import { Dropout } from '@tensorflow/tfjs-layers/dist/layers/core';
+import { Tensor3D } from '@tensorflow/tfjs';
+import { Swish } from './operations';
+import {  RegressBoxes } from './layers/RegressBoxes'
+import { Reshape } from './layers/Reshape';
 
+tf.enableDebugMode()
+tf.setBackend("webgl")
 
-export class swish extends Activation {
-    /** @nocollapse */
-    static readonly className = 'swish';
-    /**
-     * Calculate the activation function.
-     *
-     * @param x: Input.
-     * @param alpha: Scaling factor for the sigmoid function.
-     * @return Output of the Swish activation.
-     */
-    apply(x: tf.Tensor, alpha = 1): tf.Tensor {
-        return tf.sigmoid(x.mul(alpha)).mul(x);
-    }
-}
-
-tf.serialization.registerClass(swish);
-
-class FixedDropout extends Dropout {
-    static className = 'FixedDropout';
-}
-
-tf.serialization.registerClass(FixedDropout);
-
-// There is an operation in EfficientDet which uses a 
-// version of keras.dropout with a bug fixed. It is called FixedDropout
-
-
+tf.serialization.registerClass(Swish);
+tf.serialization.registerClass(RegressBoxes);
+tf.serialization.registerClass(Reshape);
+  
 
 const camConfig = {
-    // facingMode: 'user', //'environment'
+    // facingMode: 'user',
     resizeWidth: 512,
     resizeHeight: 512,
     centerCrop: true
@@ -46,17 +27,18 @@ const canvasElement = <HTMLCanvasElement>  document.getElementById('canvas');
 videoElement.width = 640;
 videoElement.height = 480;
 
-
 canvasElement.width = 512;
 canvasElement.height = 512;
 
 const camera = tf.data.webcam(videoElement, camConfig);
 
+window.tf = tf
+
 async function capturePhoto(){
     let cam = await camera;
     let img = await cam.capture();
 
-    let scaledImage = img.div(tf.scalar(255))
+    let scaledImage = img.div(tf.scalar(255)) as Tensor3D
     tf.browser.toPixels(scaledImage, canvasElement)
 }
 
@@ -64,12 +46,10 @@ async function capturePhoto(){
 capturePhoto()
 
 
-const loadModelPromise =  tf.loadLayersModel('/model/model.json');
+async function start() {
+    await tf.ready()
+    let model = await tf.loadLayersModel('/unweighted_nodp/model.json')
+    console.log(model)    
+}
 
-
-
-// const example = tf.fromPixels(webcamElement);  // for example
-// const prediction = model.predict(example);
-
-
-document.getElementById("hi").innerText = 'hi me'
+start()
