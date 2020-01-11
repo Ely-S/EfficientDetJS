@@ -1,7 +1,7 @@
-import { Tensor } from "@tensorflow/tfjs";
+import {Tensor} from '@tensorflow/tfjs';
 
 declare interface EasyTensor extends Tensor {
-    $(String): EasyTensor
+  $(String): EasyTensor
 }
 
 export function init(Class): EasyTensor

@@ -1,9 +1,8 @@
 import * as tf from "@tensorflow/tfjs";
-import { LayerArgs, Layer } from "@tensorflow/tfjs-layers/src/engine/topology";
+import { LayerArgs } from "@tensorflow/tfjs-layers/src/engine/topology";
 import { Tensor1D, Tensor3D, Shape, Tensor } from "@tensorflow/tfjs";
 
 import * as hacks from "./hacks";
-import { getExactlyOneShape } from "@tensorflow/tfjs-layers/src/utils/types_utils";
 
 hacks.init(tf.Tensor)
 
@@ -16,7 +15,7 @@ interface RegressBoxesArgs extends LayerArgs {
 const default_mean = tf.tensor1d([0, 0, 0, 0], 'float32')
 const default_std = tf.tensor1d([0.2, 0.2, 0.2, 0.2], 'float32')
 
-export class RegressBoxes  extends Layer {
+export class RegressBoxes  extends tf.layers.Layer {
     static className = 'RegressBoxes';
 
     private std: Tensor1D
@@ -28,19 +27,20 @@ export class RegressBoxes  extends Layer {
         this.mean = args.mean || default_mean
     }
 
-    call(input, kwargs) {
+    call(inputs, kwargs) {
         return tf.tidy(() => {
-            let anchors = input.gather(0)
-            let regression =input.gather(1)
+            let anchors = inputs[0]
+            this.invokeCallHook(inputs, kwargs);
+
+            let regression = inputs[1]
 
             return apply_bbox_deltas(anchors, regression,
                 this.mean, this.std)
         });
      }
    
-     computeOutputShape(inputShape: Shape|Shape[]): Shape|Shape[] {
-        let shape = getExactlyOneShape(inputShape);
-        return [shape[0]]
+     computeOutputShape(inputShape: Shape[]): Shape|Shape[] {
+        return [inputShape[0]]
     }
     
     getConfig(): tf.serialization.ConfigDict {
@@ -85,8 +85,8 @@ export function apply_bbox_deltas(
     :rtype: np.array
     */
    let widths = boxes.$(':, :, 2').sub(boxes.$(':, :, 0'))
-   let heights = boxes.$(':, :, 2').sub(boxes.$(':, :, 0'))
-   
+   let heights = boxes.$(':, :, 3').sub(boxes.$(':, :, 1'))
+
    let x1 = boxes.$(':, :, 0').add(
     deltas.$(':, :, 0')
         .mul(std.gather(0))
@@ -117,5 +117,3 @@ export function apply_bbox_deltas(
 
     return tf.stack([x1, y1, x2, y2], 2)
 }
-
-
