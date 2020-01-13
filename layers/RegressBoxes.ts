@@ -1,9 +1,9 @@
 import * as tf from "@tensorflow/tfjs";
-import { LayerArgs } from "@tensorflow/tfjs-layers/src/engine/topology";
-import { Tensor1D, Tensor3D, Shape, Tensor, any } from "@tensorflow/tfjs";
+import { LayerArgs, Layer } from "@tensorflow/tfjs-layers/src/engine/topology";
+import { Tensor1D, Tensor3D, Shape, Tensor, any, train } from "@tensorflow/tfjs";
+import { LayerVariable } from "@tensorflow/tfjs-layers/src/variables";
 
 import * as hacks from "./hacks";
-import { ValueError } from "@tensorflow/tfjs-layers/src/errors";
 
 hacks.init(tf.Tensor)
 
@@ -11,6 +11,7 @@ interface RegressBoxesArgs extends LayerArgs {
     // standard deviation to normalize by
     std?: Array<number> | Tensor1D;
     mean?: Array<number> | Tensor1D;
+    anchorShape?: Shape;
 }
 
 const default_mean = tf.tensor1d([0, 0, 0, 0], 'float32')
@@ -31,30 +32,48 @@ function parseArgument(arg: Tensor | Array<number>, defaultValue: Tensor1D): Ten
 export class RegressBoxes extends tf.layers.Layer {
     static className = 'RegressBoxes';
 
+    // @TODO: see what happens when this is true
     private std: Tensor1D
     private mean: Tensor1D
+
+    // This is anchor_shape is python
+    // The naming convention gets mangled by conversion
+    private anchorShape: Shape
+
+    // weights
+    private anchors: tf.LayerVariable = null
 
     constructor(args: RegressBoxesArgs) {
         super(args)
 
+        this.setFastWeightInitDuringBuild(true)
+
         this.std = parseArgument(args.std, default_std)
         this.mean = parseArgument(args.mean, default_mean)
+        this.anchorShape = args.anchorShape
+        this.build()
     }
 
-    call(inputs, kwargs) {
+    public build(): void {
+        this.anchors = this.addWeight(
+            "anchor_boxes_baked", this.anchorShape, "float32",
+            undefined, undefined, false // untrainable
+        )
+        this.built = true;
+    }
+
+    call(inputs: Tensor, kwargs) {
         return tf.tidy(() => {
             this.invokeCallHook(inputs, kwargs);
 
-            let anchors = inputs[0]
-            let regression = inputs[1]
-
-            return apply_bbox_deltas(anchors, regression,
+            let tensorsTensor = this.anchors.read()
+            return apply_bbox_deltas(tensorsTensor, inputs[0],
                 this.mean, this.std)
         });
     }
 
-    computeOutputShape(inputShape: Shape[]): Shape | Shape[] {
-        return [inputShape[0]]
+    computeOutputShape(): Shape {
+        return this.anchorShape
     }
 
     getConfig(): tf.serialization.ConfigDict {
@@ -62,6 +81,7 @@ export class RegressBoxes extends tf.layers.Layer {
 
         config.mean = this.mean.arraySync()
         config.std = this.std.arraySync()
+        config.anchor_shape = this.anchorShape
 
         return config;
     }
@@ -73,7 +93,7 @@ export class RegressBoxes extends tf.layers.Layer {
 }
 
 export function apply_bbox_deltas(
-    boxes: Tensor,
+    boxes: Tensor | LayerVariable,
     deltas: Tensor,
     mean = default_mean,
     std = default_std) {
@@ -98,6 +118,7 @@ export function apply_bbox_deltas(
         regression values (networks love normalization).
     :rtype: np.array
     */
+
     let widths = boxes.$(':, :, 2').sub(boxes.$(':, :, 0'))
     let heights = boxes.$(':, :, 3').sub(boxes.$(':, :, 1'))
 

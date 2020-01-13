@@ -50,7 +50,7 @@ describe("RegressBoxes Layer", () => {
     )
 
     test('RegressBoxes Layer class', async () => {
-        let rb = new RegressBoxes({})
+        let rb = new RegressBoxes({ anchorShape: boxes.shape })
         let inputs = [boxes, deltas]
         let result = rb.apply(inputs) as tf.Tensor
         assertTensorsEqual(result, outcome)
@@ -62,17 +62,17 @@ describe("RegressBoxes Layer", () => {
     })
 
     test('RegressBoxes Layer ClassName', () => {
-        let rb = new RegressBoxes({})
+        let rb = new RegressBoxes({ anchorShape: boxes.shape })
         expect(rb.getClassName()).toBe("RegressBoxes")
     });
 
     test('RegressBoxes Layer getComputedShape', () => {
-        let rb = new RegressBoxes({})
+        let rb = new RegressBoxes({ anchorShape: boxes.shape })
         let inputShape = [10, 10]
 
-        let shape = rb.computeOutputShape(inputShape)
+        let shape = rb.computeOutputShape()
 
-        expect(shape).toStrictEqual([10])
+        expect(shape).toStrictEqual(boxes.shape)
     });
 
 })

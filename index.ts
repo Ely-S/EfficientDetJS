@@ -1,14 +1,14 @@
 import 'babel-polyfill';
 
 import * as tf from '@tensorflow/tfjs';
-import {Tensor3D} from '@tensorflow/tfjs';
+import { Tensor3D } from '@tensorflow/tfjs';
 
-import {PriorProbability} from './initializers';
-import {ClipBoxes} from './layers/ClipBoxes';
-import {FilterDetections} from './layers/FilterDetections';
-import {RegressBoxes} from './layers/RegressBoxes';
-import {Reshape} from './layers/Reshape';
-import {SigmoidLayer, Swish, SwishLayer} from './layers/Sigmoids';
+import { PriorProbability } from './initializers';
+import { ClipBoxes } from './layers/ClipBoxes';
+import { FilterDetections } from './layers/FilterDetections';
+import { RegressBoxes } from './layers/RegressBoxes';
+import { Reshape } from './layers/Reshape';
+import { SigmoidLayer, Swish, SwishLayer } from './layers/Sigmoids';
 
 window.tf = tf
 
@@ -69,18 +69,16 @@ async function start() {
   let scaledImage = img.div(tf.scalar(255)) as Tensor3D
   let batch = scaledImage.expandDims()
 
-  let dumb_anchors = tf.ones([1, 1, 4]).mul(.5)
-
   console.log('DONE LOADING')
   // https://github.com/tensorflow/tfjs/blob/fe4627f11effdff3b329920eae57a4c4b1e4c67c/tfjs-core/src/util.ts#L423
-  model.predict([batch], {verbose: true})
+  model.predict([batch], { verbose: true })
 
   console.log('done predicting')
 
-  for(let i = 0; i < 100; i++) {
+  for (let i = 0; i < 100; i++) {
     console.time("Prediction")
     model.predict([batch])
-    console.timeEnd("Prediction")  
+    console.timeEnd("Prediction")
   }
 
 }
