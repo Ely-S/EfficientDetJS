@@ -73,13 +73,13 @@ async function start() {
 
   console.log('DONE LOADING')
   // https://github.com/tensorflow/tfjs/blob/fe4627f11effdff3b329920eae57a4c4b1e4c67c/tfjs-core/src/util.ts#L423
-  model.predict([batch, dumb_anchors], {verbose: true})
+  model.predict([batch], {verbose: true})
 
   console.log('done predicting')
 
   for(let i = 0; i < 100; i++) {
     console.time("Prediction")
-    model.predict([batch, dumb_anchors])
+    model.predict([batch])
     console.timeEnd("Prediction")  
   }
 

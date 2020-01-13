@@ -18,17 +18,17 @@ const default_std = tf.tensor1d([0.2, 0.2, 0.2, 0.2], 'float32')
 
 function parseArgument(arg: Tensor | Array<number>, defaultValue: Tensor1D): Tensor1D {
     if (arg === undefined || arg === null) return defaultValue
-    if (arg instanceof Array ) return tf.tensor1d(arg, 'float32') 
+    if (arg instanceof Array) return tf.tensor1d(arg, 'float32')
     if (arg instanceof tf.Tensor) {
         if (arg.shape.length !== 1) throw Error("Expected 1d Tensor, recieved" + arg)
-        return arg as Tensor1D 
+        return arg as Tensor1D
     }
-    
+
     console.error("Argument", arg, "is not an Array or Tensor")
     throw Error("Argument " + arg + "is not an Array or Tensor")
 }
 
-export class RegressBoxes  extends tf.layers.Layer {
+export class RegressBoxes extends tf.layers.Layer {
     static className = 'RegressBoxes';
 
     private std: Tensor1D
@@ -51,12 +51,12 @@ export class RegressBoxes  extends tf.layers.Layer {
             return apply_bbox_deltas(anchors, regression,
                 this.mean, this.std)
         });
-     }
-   
-     computeOutputShape(inputShape: Shape[]): Shape|Shape[] {
+    }
+
+    computeOutputShape(inputShape: Shape[]): Shape | Shape[] {
         return [inputShape[0]]
     }
-    
+
     getConfig(): tf.serialization.ConfigDict {
         const config = super.getConfig();
 
@@ -64,9 +64,9 @@ export class RegressBoxes  extends tf.layers.Layer {
         config.std = this.std.arraySync()
 
         return config;
-      }
-    
-    getClassName() { 
+    }
+
+    getClassName() {
         return 'RegressBoxes';
     }
 
@@ -75,8 +75,8 @@ export class RegressBoxes  extends tf.layers.Layer {
 export function apply_bbox_deltas(
     boxes: Tensor,
     deltas: Tensor,
-    mean=default_mean,
-    std=default_std){
+    mean = default_mean,
+    std = default_std) {
     /*
     Applies deltas (usually regression results) to boxes (usually anchors).
 
@@ -98,36 +98,13 @@ export function apply_bbox_deltas(
         regression values (networks love normalization).
     :rtype: np.array
     */
-   let widths = boxes.$(':, :, 2').sub(boxes.$(':, :, 0'))
-   let heights = boxes.$(':, :, 3').sub(boxes.$(':, :, 1'))
+    let widths = boxes.$(':, :, 2').sub(boxes.$(':, :, 0'))
+    let heights = boxes.$(':, :, 3').sub(boxes.$(':, :, 1'))
 
-   let x1 = boxes.$(':, :, 0').add(
-    deltas.$(':, :, 0')
-        .mul(std.gather(0))
-        .add(mean.gather(0))
-        .mul(widths)
-    )
+    let scales = tf.stack([widths, heights, widths, heights], 2)
 
-    let x2 = boxes.$(':, :, 2').add(
-        deltas.$(':, :, 2')
-            .mul(std.gather(2))
-            .add(mean.gather(2))
-            .mul(widths)
-        )
+    let normalized_deltas = deltas.$(':, :').mul(std).add(mean)
+    let bboxes = boxes.$(':, :').add(normalized_deltas.mul(scales))
 
-    let y1 = boxes.$(':, :, 1').add(
-        deltas.$(':, :, 1')
-            .mul(std.gather(1))
-            .add(mean.gather(1))
-            .mul(heights)
-        )
-
-    let y2 = boxes.$(':, :, 3').add(
-        deltas.$(':, :, 3')
-            .mul(std.gather(3))
-            .add(mean.gather(3))
-            .mul(heights)    
-        )
-
-    return tf.stack([x1, y1, x2, y2], 2)
+    return bboxes
 }

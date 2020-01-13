@@ -2,12 +2,12 @@ import { RegressBoxes, apply_bbox_deltas } from "./RegressBoxes"
 
 import * as tf from "@tensorflow/tfjs";
 import * as hacks from "./hacks";
-import { assertTensorsEqual} from './testing'
+import { assertTensorsEqual } from './testing'
 
 test('tf $', () => {
     hacks.init(tf.Tensor)
     let t = tf.tensor([[1, 2], [3, 4]])
-    let t2 = t.slice([0,0], [-1,1])
+    let t2 = t.slice([0, 0], [-1, 1])
     let t3 = t.$(":,:1")
     assertTensorsEqual(t2, t3)
 });
@@ -21,7 +21,7 @@ describe("RegressBoxes Layer", () => {
             [ // list of boxes
                 // list of 4 coords
                 [0, 0, 1, 1],
-                [.5, .5, .6, .6]        
+                [.5, .5, .6, .6]
             ]
         ]
     ) as hacks.EasyTensor
@@ -39,11 +39,11 @@ describe("RegressBoxes Layer", () => {
             ]
         ]
     ) as hacks.EasyTensor
-    
+
     let outcome = tf.tensor(
         [
             [
-                [0.02,  0.02, 1.02,  1.02],
+                [0.02, 0.02, 1.02, 1.02],
                 [0.496, 0.496, 0.604, 0.604]
             ]
         ]
@@ -51,7 +51,7 @@ describe("RegressBoxes Layer", () => {
 
     test('RegressBoxes Layer class', async () => {
         let rb = new RegressBoxes({})
-        let inputs = tf.stack([boxes, deltas])
+        let inputs = [boxes, deltas]
         let result = rb.apply(inputs) as tf.Tensor
         assertTensorsEqual(result, outcome)
     })
@@ -60,19 +60,19 @@ describe("RegressBoxes Layer", () => {
         let result = apply_bbox_deltas(boxes, deltas)
         assertTensorsEqual(result, outcome)
     })
-    
+
     test('RegressBoxes Layer ClassName', () => {
         let rb = new RegressBoxes({})
         expect(rb.getClassName()).toBe("RegressBoxes")
     });
-    
+
     test('RegressBoxes Layer getComputedShape', () => {
         let rb = new RegressBoxes({})
         let inputShape = [10, 10]
-    
+
         let shape = rb.computeOutputShape(inputShape)
-    
+
         expect(shape).toStrictEqual([10])
     });
-    
+
 })
