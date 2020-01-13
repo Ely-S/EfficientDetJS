@@ -86,9 +86,7 @@ export class Reshape extends layers.Layer {
   }
 
   call(inputs: Tensor|Tensor[], kwargs: Kwargs): Tensor|Tensor[] {
-    console.log(inputs);
     return tidy(() => {
-      console.log(inputs, 1);
       this.invokeCallHook(inputs, kwargs);
       const input = getExactlyOneTensor(inputs);
       const inputShape = input.shape;

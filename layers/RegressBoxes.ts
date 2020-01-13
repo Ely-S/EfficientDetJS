@@ -1,19 +1,32 @@
 import * as tf from "@tensorflow/tfjs";
 import { LayerArgs } from "@tensorflow/tfjs-layers/src/engine/topology";
-import { Tensor1D, Tensor3D, Shape, Tensor } from "@tensorflow/tfjs";
+import { Tensor1D, Tensor3D, Shape, Tensor, any } from "@tensorflow/tfjs";
 
 import * as hacks from "./hacks";
+import { ValueError } from "@tensorflow/tfjs-layers/src/errors";
 
 hacks.init(tf.Tensor)
 
 interface RegressBoxesArgs extends LayerArgs {
     // standard deviation to normalize by
-    std?: Tensor1D;
-    mean?: Tensor1D;
+    std?: Array<number> | Tensor1D;
+    mean?: Array<number> | Tensor1D;
 }
 
 const default_mean = tf.tensor1d([0, 0, 0, 0], 'float32')
 const default_std = tf.tensor1d([0.2, 0.2, 0.2, 0.2], 'float32')
+
+function parseArgument(arg: Tensor | Array<number>, defaultValue: Tensor1D): Tensor1D {
+    if (arg === undefined || arg === null) return defaultValue
+    if (arg instanceof Array ) return tf.tensor1d(arg, 'float32') 
+    if (arg instanceof tf.Tensor) {
+        if (arg.shape.length !== 1) throw Error("Expected 1d Tensor, recieved" + arg)
+        return arg as Tensor1D 
+    }
+    
+    console.error("Argument", arg, "is not an Array or Tensor")
+    throw Error("Argument " + arg + "is not an Array or Tensor")
+}
 
 export class RegressBoxes  extends tf.layers.Layer {
     static className = 'RegressBoxes';
@@ -23,15 +36,16 @@ export class RegressBoxes  extends tf.layers.Layer {
 
     constructor(args: RegressBoxesArgs) {
         super(args)
-        this.std = args.std || default_std
-        this.mean = args.mean || default_mean
+
+        this.std = parseArgument(args.std, default_std)
+        this.mean = parseArgument(args.mean, default_mean)
     }
 
     call(inputs, kwargs) {
         return tf.tidy(() => {
-            let anchors = inputs[0]
             this.invokeCallHook(inputs, kwargs);
 
+            let anchors = inputs[0]
             let regression = inputs[1]
 
             return apply_bbox_deltas(anchors, regression,
