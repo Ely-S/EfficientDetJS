@@ -1,5 +1,5 @@
 import * as tf from "@tensorflow/tfjs";
-import { LayerArgs, Layer } from "@tensorflow/tfjs-layers/src/engine/topology";
+import { LayerArgs } from "@tensorflow/tfjs-layers/src/engine/topology";
 import { Tensor1D, Tensor3D, Shape, Tensor, any, train } from "@tensorflow/tfjs";
 import { LayerVariable } from "@tensorflow/tfjs-layers/src/variables";
 
@@ -93,7 +93,7 @@ export class RegressBoxes extends tf.layers.Layer {
 }
 
 export function apply_bbox_deltas(
-    boxes: Tensor | LayerVariable,
+    boxes: Tensor,
     deltas: Tensor,
     mean = default_mean,
     std = default_std) {

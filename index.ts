@@ -9,6 +9,7 @@ import { FilterDetections } from './layers/FilterDetections';
 import { RegressBoxes } from './layers/RegressBoxes';
 import { Reshape } from './layers/Reshape';
 import { SigmoidLayer, Swish, SwishLayer } from './layers/Sigmoids';
+import { wBiFPNAdd } from './layers/wBiFPNAddLayer';
 
 window.tf = tf
 
@@ -17,6 +18,7 @@ tf.setBackend('webgl')
 
 tf.serialization.registerClass(Swish);
 tf.serialization.registerClass(RegressBoxes);
+tf.serialization.registerClass(wBiFPNAdd);
 tf.serialization.registerClass(Reshape);
 tf.serialization.registerClass(PriorProbability)
 tf.serialization.registerClass(ClipBoxes)
@@ -26,8 +28,8 @@ tf.serialization.registerClass(SigmoidLayer)
 
 const camConfig = {
   // facingMode: 'user',
-  resizeWidth: 640,
-  resizeHeight: 640,
+  resizeWidth: 512,
+  resizeHeight: 512,
   centerCrop: true
 }
 
@@ -37,8 +39,8 @@ const canvasElement = <HTMLCanvasElement>document.getElementById('canvas');
 videoElement.width = 640;
 videoElement.height = 480;
 
-canvasElement.width = 640;
-canvasElement.height = 640;
+canvasElement.width = 512;
+canvasElement.height = 512;
 
 const camera = tf.data.webcam(videoElement, camConfig);
 
@@ -93,7 +95,8 @@ function drawBoxes(predictions, canvas) {
 
 async function start() {
   await tf.ready()
-  let model = await tf.loadLayersModel('/pascal_phi1_unweighted/model.json')
+  let model = await tf.loadLayersModel('/pascal_phi0_weighted/model.json')
+  // let model = await tf.loadLayersModel('/pascal_phi1_unweighted/model.json')
   // '/pascal_unweighted_sigmoidlayer_swishlayer_nofilter/model.json')
 
   window.model = model
@@ -104,13 +107,13 @@ async function start() {
   let scaledImage = await capturePhoto() as Tensor3D
   let batch = scaledImage.expandDims()
 
-  console.log('DONE LOADING')
   // https://github.com/tensorflow/tfjs/blob/fe4627f11effdff3b329920eae57a4c4b1e4c67c/tfjs-core/src/util.ts#L423
+
+  console.time("Prediction")
   model.predict([batch], { verbose: true })
+  console.timeEnd("Prediction")
 
-  console.log('done predicting')
-
-  for (let i = 0; i < 2; i++) {
+  for (let i = 0; i < 1; i++) {
     console.time("Prediction")
     let p = model.predict([batch])
     console.timeEnd("Prediction")
