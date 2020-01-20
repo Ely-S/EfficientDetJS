@@ -13,7 +13,8 @@
   },
   "scripts": {
     "dev": "parcel index.html",
-    "build": "parcel build index.html"
+    "build": "parcel build index.html",
+    "deploy": "cp -r dist deploy"
   },
   "staticFiles": {
     "staticPath": "static",

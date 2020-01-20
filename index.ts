@@ -8,11 +8,12 @@ import { ClipBoxes } from './layers/ClipBoxes';
 import { FilterDetections } from './layers/FilterDetections';
 import { RegressBoxes } from './layers/RegressBoxes';
 import { Reshape } from './layers/Reshape';
-import { SigmoidLayer, Swish, SwishLayer } from './layers/Sigmoids';
+import { Swish } from './layers/Sigmoids';
 import { wBiFPNAdd } from './layers/wBiFPNAddLayer';
 
 window.tf = tf
 
+// tf.enableDebugMode()
 tf.enableProdMode()
 tf.setBackend('webgl')
 
@@ -23,13 +24,13 @@ tf.serialization.registerClass(Reshape);
 tf.serialization.registerClass(PriorProbability)
 tf.serialization.registerClass(ClipBoxes)
 tf.serialization.registerClass(FilterDetections)
-tf.serialization.registerClass(SwishLayer)
-tf.serialization.registerClass(SigmoidLayer)
+
+const size = 512;
 
 const camConfig = {
   // facingMode: 'user',
-  resizeWidth: 512,
-  resizeHeight: 512,
+  resizeWidth: size,
+  resizeHeight: size,
   centerCrop: true
 }
 
@@ -39,8 +40,8 @@ const canvasElement = <HTMLCanvasElement>document.getElementById('canvas');
 videoElement.width = 640;
 videoElement.height = 480;
 
-canvasElement.width = 512;
-canvasElement.height = 512;
+canvasElement.width = size;
+canvasElement.height = size;
 
 const camera = tf.data.webcam(videoElement, camConfig);
 
@@ -49,7 +50,6 @@ async function capturePhoto(): Promise<Tensor3D> {
   let img = await cam.capture();
 
   let scaledImage = img.div(tf.scalar(255)) as Tensor3D
-  tf.browser.toPixels(scaledImage, canvasElement)
 
   return scaledImage
 }
@@ -93,13 +93,75 @@ function drawBoxes(predictions, canvas) {
   });
 };
 
+async function loop(model) {
+
+  let scaledImage = await capturePhoto() as Tensor3D
+  let batch = scaledImage.expandDims()
+
+  // https://github.com/tensorflow/tfjs/blob/fe4627f11effdff3b329920eae57a4c4b1e4c67c/tfjs-core/src/util.ts#L423
+
+  console.time("Prediction")
+  let p = model.predict([batch])
+  console.timeEnd("Prediction")
+
+  let allBoxes = p[0]
+  let allScores = p[1]
+
+  // allBoxes has shape (batch_size, boxes, 4)
+  // allScores has shape (batch_size, boxes, n_classes)
+  // where boxes = n_ancor_boxes
+
+  // perform inference on one image at a time
+
+  let boxes = allBoxes.gather(0).squeeze()
+  let scores = allScores.gather(0).squeeze()
+
+
+  let maxOutPutSize = 2
+  let iouThreshold = .5
+  let scoreThreshold = .94
+
+
+
+  // person is class 14
+  console.time("nms")
+
+  let scores_for_class_i = scores.$(":," + 14)
+
+  let indecies = await tf.image.nonMaxSuppressionAsync(
+    boxes, scores_for_class_i,
+    maxOutPutSize, iouThreshold, scoreThreshold
+  )
+
+  let predBoxes = boxes.gather(indecies).dataSync()
+  let predScores = scores_for_class_i.gather(indecies).dataSync()
+
+
+  console.timeEnd("nms")
+
+  tf.browser.toPixels(scaledImage, canvasElement)
+
+  for (let i = 0; i < predScores.length; i++) {
+    drawBoxes([{
+      bbox: predBoxes.slice(i * 4, i * 4 + 4),
+      class: "human",
+      score: predScores[i]
+    }], canvasElement)
+  }
+
+  console.log("draw end")
+  return loop(model)
+}
+
 async function start() {
   await tf.ready()
   let model = await tf.loadLayersModel('/pascal_phi0_weighted/model.json')
   // let model = await tf.loadLayersModel('/pascal_phi1_unweighted/model.json')
-  // '/pascal_unweighted_sigmoidlayer_swishlayer_nofilter/model.json')
 
   window.model = model
+
+  // return loop(model)
+
 
   model.summary()
 
@@ -113,81 +175,57 @@ async function start() {
   model.predict([batch], { verbose: true })
   console.timeEnd("Prediction")
 
-  for (let i = 0; i < 1; i++) {
-    console.time("Prediction")
-    let p = model.predict([batch])
-    console.timeEnd("Prediction")
-
-    let allBoxes = p[0]
-    let allScores = p[1]
-
-    // allBoxes has shape (batch_size, boxes, 4)
-    // allScores has shape (batch_size, boxes, n_classes)
-    // where boxes = n_ancor_boxes
-
-    // perform inference on one image at a time
-
-    let boxes = allBoxes.gather(0).squeeze()
-    let scores = allScores.gather(0).squeeze()
 
 
-    let maxOutPutSize = 2
-    let iouThreshold = .5
-    let scoreThreshold = .5
+  console.time("Prediction")
+  let p = model.predict([batch])
+  console.timeEnd("Prediction")
 
-    console.log(boxes)
+  let allBoxes = p[0]
+  let allScores = p[1]
 
+  // allBoxes has shape (batch_size, boxes, 4)
+  // allScores has shape (batch_size, boxes, n_classes)
+  // where boxes = n_ancor_boxes
 
-    // person is class 14
-    console.time("nms")
-
-    let scores_for_class_i = scores.$(":," + 14)
-
-    let indecies = await tf.image.nonMaxSuppressionAsync(
-      boxes, scores_for_class_i,
-      maxOutPutSize, iouThreshold, scoreThreshold
-    )
-
-    indecies.print()
-    let pickedBoxes = boxes.gather(indecies)
-    pickedBoxes.print()
-
-    let predBoxes = pickedBoxes.dataSync()
-    let predScores = scores_for_class_i.gather(indecies).dataSync()
-
-    console.log(predBoxes)
-    console.log(predScores)
-
-    console.timeEnd("nms")
-
-    for (let i = 0; i < predScores.length; i++) {
-      drawBoxes([{
-        bbox: predBoxes.slice(i * 4, i * 4 + 4),
-        class: "human",
-        score: predScores[i]
-      }], canvasElement)
-    }
-
-    console.log("draw end")
+  // perform inference on one image at a time
+  let boxes = allBoxes.gather(0).squeeze()
+  let scores = allScores.gather(0).squeeze()
 
 
+  let maxOutPutSize = 2
+  let iouThreshold = .5
+  let scoreThreshold = .5
+
+
+  // person is class 14
+  let scores_for_class_i = scores.$(":," + 14)
+
+  console.time("nms")
+  let indecies = await tf.image.nonMaxSuppressionAsync(
+    boxes, scores_for_class_i,
+    maxOutPutSize, iouThreshold, scoreThreshold
+  )
+  console.timeEnd("nms")
+
+  let predBoxes = boxes.gather(indecies).dataSync()
+  let predScores = scores_for_class_i.gather(indecies).dataSync()
+
+  console.log(predBoxes)
+  console.log(predScores)
+
+
+  tf.browser.toPixels(scaledImage, canvasElement)
+
+  for (let i = 0; i < predScores.length; i++) {
+    drawBoxes([{
+      bbox: predBoxes.slice(i * 4, i * 4 + 4),
+      class: "human",
+      score: predScores[i]
+    }], canvasElement)
   }
 
-  // function nms_by_class(){
-  //   for (let i = 0; i < n_classes; i++) {
-  //     // let scores_for_class_i = scores.slice([0, i], [-1, i + 1]).squeeze()
-  //     let scores_for_class_i = scores.$(":," + i)
-
-  //     //@TODO: use nonMaxSuppressionWithScoreAsync
-  //     indecesPromises[i] = tf.image.nonMaxSuppressionAsync(
-  //       boxes, scores_for_class_i,
-  //       maxOutPutSize, iouThreshold, scoreThreshold
-  //     )
-
-  //   }
-
-  // }
-
+  console.log("draw end")
 }
 
 
