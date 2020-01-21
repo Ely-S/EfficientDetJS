@@ -67,7 +67,9 @@ export class RegressBoxes extends tf.layers.Layer {
             this.invokeCallHook(inputs, kwargs);
 
             let tensorsTensor = this.anchors.read()
-            return apply_bbox_deltas(tensorsTensor, inputs[0],
+            return apply_bbox_deltas(
+                tensorsTensor as hacks.EasyTensor,
+                inputs[0] as hacks.EasyTensor,
                 this.mean, this.std)
         });
     }
@@ -93,8 +95,8 @@ export class RegressBoxes extends tf.layers.Layer {
 }
 
 export function apply_bbox_deltas(
-    boxes: Tensor,
-    deltas: Tensor,
+    boxes: hacks.EasyTensor,
+    deltas: hacks.EasyTensor,
     mean = default_mean,
     std = default_std) {
     /*

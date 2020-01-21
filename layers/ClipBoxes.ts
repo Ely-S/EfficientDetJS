@@ -1,16 +1,21 @@
 import * as tf from '@tensorflow/tfjs';
-import {layers, Shape, Tensor, tidy} from '@tensorflow/tfjs';
+import { layers, Shape, Tensor, tidy } from '@tensorflow/tfjs';
+import { EasyTensor } from './hacks';
 
 export class ClipBoxes extends layers.Layer {
   /** @nocollapse */
   static className = 'ClipBoxes';
 
-  computeOutputShape(inputShape: Shape[]): Shape|Shape[]{return inputShape[1]}
+  computeOutputShape(inputShape: Shape[]): Shape | Shape[] { return inputShape[1] }
 
-  call(inputs: Tensor[]): Tensor|Tensor[] {
+  call(inputs: Tensor[]): Tensor | Tensor[] {
     return tidy(() => {
-      let images = inputs[0] // Batch of images with shape (n, height, width, channels) 
-      let boxes = inputs[1] // Batch of predicted boxes with shape (n, n_predictions, 4)
+
+      // Batch of images with shape (n, height, width, channels) 
+      let images = inputs[0]
+
+      // Batch of predicted boxes with shape (n, n_predictions, 4)
+      let boxes = inputs[1] as EasyTensor
 
       let maxHeight = images.shape[1] - 1
       let maxWidth = images.shape[2] - 1
