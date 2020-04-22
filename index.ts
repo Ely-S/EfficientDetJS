@@ -24,23 +24,26 @@ tf.serialization.registerClass(PriorProbability)
 tf.serialization.registerClass(ClipBoxes)
 tf.serialization.registerClass(FilterDetections)
 
-const size = 512;
+const size = 256;
 
 const camConfig = {
-  // facingMode: 'user',
+  facingMode: 'user',
   resizeWidth: size,
   resizeHeight: size,
-  centerCrop: true
+  centerCrop: false
 }
 
 const videoElement = <HTMLVideoElement>document.getElementById('video');
 const canvasElement = <HTMLCanvasElement>document.getElementById('canvas');
+const testCanvasElement = <HTMLCanvasElement>document.getElementById('testcanvas');
 
-videoElement.width = 640;
-videoElement.height = 480;
+testCanvasElement.width = canvasElement.width = size;
+testCanvasElement.height = canvasElement.height = size;
 
-canvasElement.width = size;
-canvasElement.height = size;
+const labels = {
+  15: "person",
+  2: "bike"
+}
 
 const camera = tf.data.webcam(videoElement, camConfig);
 
@@ -53,78 +56,110 @@ async function capturePhoto(): Promise<Tensor3D> {
   return scaledImage
 }
 
-async function loop(model) {
-  // @TODO: This needs to use tf.tidy
 
-  let scaledImage = await capturePhoto() as Tensor3D
+const timeEl = document.getElementById("time")
+
+async function loop(model) {
+  let start = Date.now()
+
+  let scaledImage = await capturePhoto()
+
+  // let scaledImage = await capturePhoto() as Tensor3D
   let batch = scaledImage.expandDims()
 
   // https://github.com/tensorflow/tfjs/blob/fe4627f11effdff3b329920eae57a4c4b1e4c67c/tfjs-core/src/util.ts#L423
 
   console.time("Prediction")
-  let p = model.predict([batch])
+  let p = await model.executeAsync([batch])
   console.timeEnd("Prediction")
 
-  let allBoxes = p[0]
-  let allScores = p[1]
-
-  // allBoxes has shape (batch_size, boxes, 4)
-  // allScores has shape (batch_size, boxes, n_classes)
-  // where boxes = n_ancor_boxes
-
-  // perform inference on one image at a time
-
-  let boxes = allBoxes.gather(0).squeeze()
-  let scores = allScores.gather(0).squeeze()
+  // p has shape [batch_size, detections, predictions]
+  // detections contains [image_id, y, x, height, width, score, class]
 
 
-  let maxOutPutSize = 2
-  let iouThreshold = .5
-  let scoreThreshold = .94
-
-
-  // person is class 14
-  console.time("nms")
-
-  let scores_for_class_i = scores.$(":," + 14)
-
-  let indecies = await tf.image.nonMaxSuppressionAsync(
-    boxes, scores_for_class_i,
-    maxOutPutSize, iouThreshold, scoreThreshold
-  )
-
-  let [predBoxes, predScores] = await Promise.all([
-    boxes.gather(indecies).data(),
-    scores_for_class_i.gather(indecies).data()
+  let [predScores, predBoxes, predClasses, _] = await Promise.all([
+    p.$(":,:,5").data(),
+    p.$(":,:,1:5").data(),
+    p.$(":,:,6").data(),
+    tf.browser.toPixels(scaledImage, canvasElement)
   ])
 
-  console.timeEnd("nms")
-
-  tf.browser.toPixels(scaledImage, canvasElement)
+  let boxes = []
 
   for (let i = 0; i < predScores.length; i++) {
-    drawBoxes([{
-      bbox: predBoxes.slice(i * 4, i * 4 + 4),
-      class: "human",
+    let bbox = predBoxes.slice(i * 4, i * 4 + 4)
+    let [y, x, height, width] = bbox
+
+    if (predScores[i] < .7) continue
+    if (labels[predClasses[i]] === undefined) continue
+
+    boxes.push({
+      bbox: [y, x, height, width],
+      class: labels[predClasses[i]],
       score: predScores[i]
-    }], canvasElement)
+    })
   }
 
-  console.log("draw end")
-  return loop(model)
+  drawBoxes(boxes, canvasElement)
+
+  timeEl.innerText = Date.now() - start + "ms"
+  loop(model)
 }
+
+async function test(model) {
+  // @TODO: This needs to use tf.tidy
+
+  const image = <HTMLImageElement>document.getElementById("img")
+  let img = tf.browser.fromPixels(image)
+  img = tf.image.resizeBilinear(img, [size, size])
+
+  let scaledImage = img.div(tf.scalar(255)) as Tensor3D
+
+  let batch = scaledImage.expandDims()
+
+  // https://github.com/tensorflow/tfjs/blob/fe4627f11effdff3b329920eae57a4c4b1e4c67c/tfjs-core/src/util.ts#L423
+
+  console.time("Prediction")
+  let p = await model.executeAsync([batch])
+  console.timeEnd("Prediction")
+
+  // p has shape [batch_size, detections, predictions]
+  // detections contains [image_id, y, x, height, width, score, class]
+
+  let predScores = tf.mul(2, p.$(":,:,5")).dataSync()
+  let predBoxes = p.$(":,:,1:5").dataSync()
+  let predClasses = p.$(":,:,6").dataSync()
+
+
+  await tf.browser.toPixels(scaledImage, testCanvasElement)
+
+  let boxes = []
+
+  for (let i = 0; i < predScores.length; i++) {
+    let bbox = predBoxes.slice(i * 4, i * 4 + 4)
+    let [y, x, height, width] = bbox
+
+    boxes.push({
+      bbox: [x, y, x + width, y + height],
+      class: labels[predClasses[i]],
+      score: predScores[i]
+    })
+  }
+
+  drawBoxes(boxes, testCanvasElement)
+}
+
 
 async function start() {
   await tf.ready()
 
-  let model = await tf.loadLayersModel('/pascal_phi0_weighted/model.json')
-
-  // let model = await tf.loadLayersModel('/pascal_phi1_unweighted/model.json')
+  let model = await tf.loadGraphModel('/web/model.json')
 
   window.model = model
-  model.summary()
 
-  loop(model)
+  await test(model)
+  await loop(model)
+
 }
 
 
