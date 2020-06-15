@@ -1,9 +1,10 @@
 # EfficientDet JS
 
-## A live webcam demo of (EfficientDet)[https://github.com/google/automl/tree/master/efficientdet] 
+#### A live webcam demo of [https://github.com/google/automl/tree/master/efficientdet](EfficientDet)
 
+#### Commands to create the model.
 
-Commands to create the model. Requires that you get (automl)[https://github.com/google/automl/tree/master/efficientdet] running.
+Requires that you get [https://github.com/google/automl/tree/master/efficientdet](automl) running.
 
 1. downlaod the checkpoint
 
@@ -24,4 +25,4 @@ Commands to create the model. Requires that you get (automl)[https://github.com/
 
 ### Misc.
 
-This repository contains some tf.js keras layers, operations, and initializers that are not being used right now. This repo was originally a port of (this keras implementation)[https://github.com/xuannianz/EfficientDet] to JS before google released the automl repository with an official python implementation that can be exported as savedmodel.
+This repository contains some tf.js keras layers, operations, and initializers that are not being used right now. This project was originally working a port of [https://github.com/xuannianz/EfficientDet](this keras implementation) to JS before google released the automl repository with an official python implementation that can be exported as savedmodel.
