@@ -2,17 +2,17 @@ export function drawBoxes(predictions, canvas) {
     const ctx = canvas.getContext("2d");
     // ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 
-    const font = "16px helvetica";
+    const font = "8px helvetica";
     ctx.font = font;
     ctx.textBaseline = "top";
 
     predictions.forEach(prediction => {
-        let [y, x, height, width] = prediction.bbox
+        let { y, x, height, width } = prediction.bbox
 
 
         // Draw the bounding box.
         ctx.strokeStyle = "#FF0000";
-        ctx.lineWidth = 3;
+        ctx.lineWidth = 1;
         ctx.strokeRect(x, y, width, height);
 
         // Draw the label background.
