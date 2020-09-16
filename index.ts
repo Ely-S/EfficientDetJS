@@ -6,17 +6,13 @@ import { Tensor3D } from '@tensorflow/tfjs';
 import { canvasRGBA } from "stackblur-canvas"
 
 import * as hacks from "./layers/hacks";
+import getDetections from "./postprocess"
+
 
 hacks.init(tf.Tensor)
 const radius = 4
 
 
-// import { PriorProbability } from './initializers';
-// import { ClipBoxes } from './layers/ClipBoxes';
-// import { FilterDetections } from './layers/FilterDetections';
-// import { RegressBoxes } from './layers/RegressBoxes';
-// import { Swish } from './layers/Sigmoids';
-// import { wBiFPNAdd } from './layers/wBiFPNAddLayer';
 import { drawBoxes } from './drawBoxes';
 
 window.tf = tf
@@ -25,16 +21,11 @@ window.tf = tf
 tf.enableProdMode()
 tf.setBackend('webgl')
 
-// tf.serialization.registerClass(Swish);
-// tf.serialization.registerClass(RegressBoxes);
-// tf.serialization.registerClass(wBiFPNAdd);
-// tf.serialization.registerClass(PriorProbability)
-// tf.serialization.registerClass(ClipBoxes)
-// tf.serialization.registerClass(FilterDetections)
+
 const targetCanvas = document.createElement("canvas")
 targetCanvas.height = targetCanvas.width = 300
 
-const size = 300;
+const size = 900;
 
 const camConfig = {
   facingMode: 'user',
@@ -89,6 +80,8 @@ const timeEl = document.getElementById("time")
 async function loop(model) {
   let start = Date.now()
 
+  console.log(100)
+
   let rawImg = await capturePhoto() as Tensor3D
 
   let img = tf.image.resizeNearestNeighbor(
@@ -100,6 +93,9 @@ async function loop(model) {
 
   canvasRGBA(targetCanvas, 0, 0, 300, 300, 4);
 
+  console.log(300)
+
+
   img = tf.browser.fromPixels(targetCanvas)
 
   // https://github.com/tensorflow/tfjs/blob/fe4627f11effdff3b329920eae57a4c4b1e4c67c/tfjs-core/src/util.ts#L423
@@ -107,12 +103,20 @@ async function loop(model) {
 
   let batch = scaledImage.expandDims()
 
+
+  console.log(200)
+
+
   console.time("Prediction")
   // effficient-det model
   // let p = window.pred = await model.executeAsync({ image_arrays: batch })
 
   // zach model
+  console.log(400)
+
   let p = window.pred = await model.executeAsync({ image_tensor: batch })
+
+  console.log(500)
 
   console.timeEnd("Prediction")
   let [detection_classes, num_detections, detection_boxes, detection_scores] = p
@@ -150,66 +154,39 @@ async function loop(model) {
 
 
 async function test(model) {
-  // @TODO: This needs to use tf.tidy
-  const testJPGCanvas = <HTMLImageElement>document.getElementById("img")
+  const testJPGImg = document.getElementById("img") as HTMLImageElement
 
-  let img = tf.image.resizeNearestNeighbor(
-    tf.browser.fromPixels(testJPGCanvas), [300, 300], true)
+  let img = tf.browser.fromPixels(testJPGImg)
+  let [height, width] = img.shape
+  testCanvasElement.height = targetCanvas.height = height
+  testCanvasElement.width = targetCanvas.width = width
+
   let originalImg = img
 
-  await tf.browser.toPixels(img.div(255), targetCanvas)
-
-  canvasRGBA(targetCanvas, 0, 0, 300, 300, 2);
+  await tf.browser.toPixels(img.div(255) as Tensor3D, targetCanvas)
+  canvasRGBA(targetCanvas, 0, 0, width, height, 2);
   img = tf.browser.fromPixels(targetCanvas)
 
-  let scaledImage = tf.cast(img, "int32") as Tensor3D
-
-  let batch = scaledImage.expandDims()
+  let batch = img.expandDims()
 
   // https://github.com/tensorflow/tfjs/blob/fe4627f11effdff3b329920eae57a4c4b1e4c67c/tfjs-core/src/util.ts#L423
 
   console.time("Prediction")
-  let pred = window.pred = await model.executeAsync({ image_tensor: batch })
+  let result = window.pred = await model.executeAsync({ image_tensor: batch })
   console.timeEnd("Prediction")
 
-  // zach
-  // zachs model has output detection_Scores, num_detections, detection_boxes 
-  let [detection_classes, num_detections, detection_boxes, detection_scores] = pred
+  let [detectedObjects, _] = await Promise.all([
+    getDetections(result, width, height),
+    tf.browser.toPixels(originalImg.div(255) as Tensor3D, testCanvasElement)
+  ])
 
-  detection_scores = detection_scores.dataSync()
-  num_detections = num_detections.dataSync()
-  detection_boxes = detection_boxes.dataSync()
+  tf.dispose(img)
+  tf.dispose(batch)
+  tf.dispose(result)
+  tf.dispose(originalImg)
 
-  // efficientdet
-  // p has shape [batch_size, detections, predictions]
-
-  // let predScores = p.$(":,:,5").dataSync()
-  // let predBoxes = p.$(":,:,1:5").dataSync()
-  // let predClasses = p.$(":,:,6").dataSync()
-
-  await tf.browser.toPixels(originalImg.div(255), testCanvasElement)
-
-  let boxes = []
-
-  detection_scores.forEach((score, index) => {
-    let [y, x, ymax, xmax] = detection_boxes
-    if (score < .01) return
-    boxes.push({
-      bbox: {
-        x: x * 300,
-        y: y * 300,
-        width: (xmax - x) * 300,
-        height: (ymax - y) * 300
-      },
-      "class": "bulldozer",
-      score
-    })
-  });
-
-  console.log(boxes)
-  drawBoxes(boxes, testCanvasElement)
+  drawBoxes(detectedObjects, testCanvasElement)
 }
-
 
 async function start() {
   await tf.ready()
@@ -218,8 +195,11 @@ async function start() {
   // let model = window.model = await tf.loadGraphModel('d0/model.json')
 
   await test(model)
-  await loop(model)
+  await test(model)
+  await test(model)
+  // await loop(model)
 }
+
 
 
 start()

@@ -7,7 +7,7 @@ export function drawBoxes(predictions, canvas) {
     ctx.textBaseline = "top";
 
     predictions.forEach(prediction => {
-        let { y, x, height, width } = prediction.bbox
+        let [x, y, width, height] = prediction.bbox
 
 
         // Draw the bounding box.
