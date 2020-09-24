@@ -15,8 +15,8 @@
   },
   "scripts": {
     "dev": "parcel index.html",
-    "build": "parcel build index.html",
-    "deploy": "cp -r dist deploy && aws s3 cp --recursive dist  s3://ondaka-dev-bucket/e6-p3 --acl public-read    "
+    "build": "parcel build --public-url /e6-p3 index.html",
+    "deploy": "cp -r dist deploy && aws s3 cp --recursive dist  s3://ondaka-dev-bucket/e6-p3 --acl public-read"
   },
   "staticFiles": {
     "staticPath": "static",
