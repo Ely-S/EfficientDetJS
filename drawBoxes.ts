@@ -2,12 +2,13 @@ export function drawBoxes(predictions, canvas, clear = true) {
     const ctx = canvas.getContext("2d");
     if (clear) ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 
-    const font = "15px ariel";
+    const font = "12px ariel";
     ctx.font = font;
     ctx.textBaseline = "top";
 
     predictions.forEach(prediction => {
-        let [x, y, width, height] = prediction.bbox
+        // let [x, y, width, height] = prediction.bbox
+        let { x, y, width, height } = prediction.bbox
 
 
         // Draw the bounding box.
@@ -16,10 +17,10 @@ export function drawBoxes(predictions, canvas, clear = true) {
         ctx.strokeRect(x, y, width, height);
 
         // Draw the label background.
-        var label = (prediction.score * 100).toFixed(1) + "%"
+        var label = (prediction.score * 100).toFixed(0)
         ctx.fillStyle = "#FF0000";
-        const textWidth = ctx.measureText(label).width + 2;
-        const textHeight = parseInt(font, 10); + 4
+        const textWidth = ctx.measureText(label).width * 1.3;
+        const textHeight = parseInt(font, 10); + 2
 
         // draw top left rectangle
         ctx.fillRect(x, y - 2, textWidth, textHeight);
