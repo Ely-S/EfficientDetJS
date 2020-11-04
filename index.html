@@ -6,25 +6,34 @@
 </head>
 
 <body>
-  <video id="video"></video>
+  <button type="button" id="startLive">Start Live Demo</button>
+  <video hidden id="video"></video>
   <canvas id="livecanvas" width="0" height="0"></canvas>
-  <p> Loading </p>
   <p id="time"></p>
 
 
   <b>Blur</b>
-  <input id="blur" step=".5" value="15" type="number" min="2" max="50">
+  <input id="blur" step="2" value="15" type="number" min="1" max="50">
 
   <hr />
   <h2>Static Demo</h2>
+
   <canvas id="testcanvas" width="300" height="300" style=""></canvas>
-  <img src="static/img_2444.jpg" id="img" height="900">
+  <br>
+  <label>
+    <img src="static/img_2444.jpg" id="img" height="900">
 
-
+    <input id="upload" autocomplete="off" type="file" capture="environment" accept="image/*">
+  </label>
 
   <script src="./index.ts"></script>
 
   <style>
+    button,
+    input[type="file"] {
+      height: 100px;
+    }
+
     #blur {
       width: 300px;
     }

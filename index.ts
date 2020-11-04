@@ -14,10 +14,6 @@ tf.enableProdMode()
 
 const size = 1200;
 
-const camConfig = {
-  facingMode: 'environment',
-  centerCrop: false
-}
 
 const blurCanvas = document.createElement("canvas")
 const videoElement = <HTMLVideoElement>document.getElementById('video');
@@ -67,12 +63,10 @@ const labels = {
 //   89: 'hair drier', 90: 'toothbrush',
 // }
 
-const camera = tf.data.webcam(videoElement, camConfig);
+var camera
 
 async function capturePhoto(): Promise<Tensor3D> {
-  let cam = await camera;
-  let img = await cam.capture();
-  return img as Tensor3D
+  return (await camera).capture()
 }
 
 
@@ -119,7 +113,7 @@ async function loop() {
         width: xmax - x,
         height: ymax - y
       },
-      "class": labels[_class],
+      "class": labels[_class] || _class,
       score
     })
   });
@@ -142,10 +136,8 @@ async function loop() {
 }
 
 
-async function test(model) {
-  const testJPGImg = document.getElementById("img") as HTMLImageElement
-
-  let img = tf.browser.fromPixels(testJPGImg)
+async function test(model, imgSrc: HTMLCanvasElement | HTMLVideoElement | HTMLImageElement | ImageData) {
+  let img = tf.browser.fromPixels(imgSrc)
   let [height, width] = img.shape
   testCanvasElement.height = blurCanvas.height = height
   testCanvasElement.width = blurCanvas.width = width
@@ -174,11 +166,12 @@ async function test(model) {
         width: xmax - x,
         height: ymax - y
       },
-      "class": labels[_class],
+      "class": labels[_class] || _class,
       score
     })
   });
 
+  console.log("drawing")
   await tf.browser.toPixels(img, testCanvasElement)
 
   tf.dispose(img)
@@ -202,15 +195,43 @@ async function start() {
   // efficient det d0
   // model = window.model = await tf.loadGraphModel('d0/model.json')
 
-  await test(model)
+  const testJPGImg = document.getElementById("img") as HTMLImageElement
 
-  console.log("getting camera")
-  await camera
+  await test(model, testJPGImg)
 
-  console.log("loop")
+  document.getElementById("upload").addEventListener("change", (e) => {
+    var fileInput = e.target as HTMLInputElement
 
-  loop()
+    testJPGImg.onload = () => {
+      test(model, testJPGImg)
+    }
+
+    testJPGImg.src = URL.createObjectURL(fileInput.files[0]);
+  })
+
+  document.getElementById("startLive").onclick = function () {
+    this.hidden = true
+    videoElement.hidden = false;
+
+    (async function startLiveDemo() {
+      console.log("getting camera")
+
+      const camConfig = {
+        facingMode: 'environment',
+        centerCrop: false
+      }
+
+      camera = tf.data.webcam(videoElement, camConfig);
+      await camera
+
+      console.log("loop")
+
+      loop()
+    })()
+  }
+
 }
+
 
 
 start()
