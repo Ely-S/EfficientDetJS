@@ -3,3 +3,5 @@ deploy/
 .cache/
 node_modules/
 .vscode/
+models/
+*.log
