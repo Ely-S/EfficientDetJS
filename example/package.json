@@ -1,0 +1,29 @@
+{
+  "name": "efficientdet-js",
+  "version": "0.0.1",
+  "description": "An EfficientDet wrapper for js.",
+  "main": "index.js",
+  "author": "ely-s",
+  "license": "MIT",
+  "dependencies": {
+    "@babel/preset-env": "^7.7.7",
+    "@tensorflow/tfjs": "^2.0.0",
+    "babel-polyfill": "^6.26.0",
+    "efficientdet.js": "file:..",
+    "parcel": "^1.12.4",
+    "tf-gaussian-blur": "^1.0.1"
+  },
+  "scripts": {
+    "start": "parcel index.html",
+    "build": "parcel build --public-url / index.html"
+  },
+  "staticFiles": {
+    "staticPath": "static",
+    "watcherGlob": "**"
+  },
+  "devDependencies": {
+    "@babel/preset-typescript": "^7.7.7",
+    "@types/expect": "^24.3.0",
+    "typescript": "^3.7.4"
+  }
+}
