@@ -24,7 +24,6 @@ const labels = {
 }
 
 interface EfficientDetOptions {
-  labels: {}
 }
 
 interface Box {
@@ -42,17 +41,15 @@ export default class EfficientDet {
   labels: { [index: number]: string } = labels
   modelURI = 'd0/model.json'
   model?: GraphModel
-  minScore = 0.2
+  minScore = 0.01
 
   constructor(options: EfficientDetOptions) {
-
 
   }
 
   load = async () => {
     await tf.ready()
     this.model = await tf.loadGraphModel(this.modelURI)
-
   }
 
   predict = async (image: Tensor3D) => {
@@ -72,7 +69,6 @@ export default class EfficientDet {
     }
 
     let result = await this.model.executeAsync({ image_arrays: imageBatch }) as tf.Tensor
-
 
     let detectedObjects: Box[] = []
 
