@@ -43,7 +43,7 @@ export default class EfficientDet {
   model?: GraphModel
   minScore = 0.01
 
-  constructor(options: EfficientDetOptions) {
+  constructor(options?: EfficientDetOptions) {
 
   }
 
@@ -68,12 +68,19 @@ export default class EfficientDet {
       throw new Error("Model not loaded yet, call .load()")
     }
 
-    let result = await this.model.executeAsync({ image_arrays: imageBatch }) as tf.Tensor
+    // input imageBatch to placeholder image_arrays
+    // get output tensor 'detections'
+    let detections = await this.model.executeAsync(
+      { image_arrays: imageBatch }, "detections") as tf.Tensor
+
+    let predictions = await detections.array()[0] as Array<Array<number>>
+
+    tf.dispose(detections)
 
     let detectedObjects: Box[] = []
 
-    let results = await result.array() as Array<Array<Array<number>>>
-    let predictions = results[0]
+    // There may be no predictions, which would result in undefined
+    if (predictions === undefined) return detectedObjects
 
     predictions.forEach(out => {
       let [image_id, y, x, ymax, xmax, score, _class] = out
@@ -91,8 +98,6 @@ export default class EfficientDet {
       } as Box)
     });
 
-
-    tf.dispose(result)
 
     return detectedObjects
   }
