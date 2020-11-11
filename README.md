@@ -1,13 +1,10 @@
-### 
-
-Building from source
+###  Building the typescript
 
     yarn build
 
 #### Building the model
 
-There is a a Dockerfile in hub that will an image containing an EfficientDet model and convert it to the tensorflow.js format
-
+There is a Dockerfile in hub that will an image containing an EfficientDet model and convert it to the tensorflow.js format
 
     cd hub
     docker build -t efficientdet-model-d0 .
