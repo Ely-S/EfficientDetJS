@@ -3,7 +3,7 @@ module.exports = {
     ['@babel/preset-env', {
       targets: "> 2%",
       loose: true,
-      "modules": "false"
+      "modules": false
     }],
 
     '@babel/preset-typescript',
