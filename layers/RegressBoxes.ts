@@ -1,7 +1,6 @@
 import * as tf from "@tensorflow/tfjs";
 import { LayerArgs } from "@tensorflow/tfjs-layers/src/engine/topology";
-import { Tensor1D, Tensor3D, Shape, Tensor, any, train } from "@tensorflow/tfjs";
-import { LayerVariable } from "@tensorflow/tfjs-layers/src/variables";
+import { Tensor1D, Shape, Tensor } from "@tensorflow/tfjs";
 
 import * as hacks from "./hacks";
 
