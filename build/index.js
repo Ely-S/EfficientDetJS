@@ -62,7 +62,7 @@ var EfficientDet = /** @class */ (function () {
         var _this = this;
         this.labels = labels;
         this.modelURI = 'd0/model.json';
-        this.minScore = 0.2;
+        this.minScore = 0.01;
         this.load = function () { return __awaiter(_this, void 0, void 0, function () {
             var _a;
             return __generator(this, function (_b) {
@@ -97,7 +97,7 @@ var EfficientDet = /** @class */ (function () {
             });
         }); };
         this.predictBatch = function (imageBatch) { return __awaiter(_this, void 0, void 0, function () {
-            var result, detectedObjects, results, predictions;
+            var detections, predictions, detectedObjects;
             var _this = this;
             return __generator(this, function (_a) {
                 switch (_a.label) {
@@ -105,14 +105,17 @@ var EfficientDet = /** @class */ (function () {
                         if (!this.model) {
                             throw new Error("Model not loaded yet, call .load()");
                         }
-                        return [4 /*yield*/, this.model.executeAsync({ image_arrays: imageBatch })];
+                        return [4 /*yield*/, this.model.executeAsync({ image_arrays: imageBatch }, "detections")];
                     case 1:
-                        result = _a.sent();
-                        detectedObjects = [];
-                        return [4 /*yield*/, result.array()];
+                        detections = _a.sent();
+                        return [4 /*yield*/, detections.array()];
                     case 2:
-                        results = _a.sent();
-                        predictions = results[0];
+                        predictions = (_a.sent())[0];
+                        tf.dispose(detections);
+                        detectedObjects = [];
+                        // There may be no predictions, which would result in undefined
+                        if (predictions === undefined)
+                            return [2 /*return*/, detectedObjects];
                         predictions.forEach(function (out) {
                             var image_id = out[0], y = out[1], x = out[2], ymax = out[3], xmax = out[4], score = out[5], _class = out[6];
                             if (score < _this.minScore)
@@ -128,7 +131,6 @@ var EfficientDet = /** @class */ (function () {
                                 score: score
                             });
                         });
-                        tf.dispose(result);
                         return [2 /*return*/, detectedObjects];
                 }
             });
@@ -138,28 +140,26 @@ var EfficientDet = /** @class */ (function () {
             var ctx = canvas.getContext("2d");
             if (clearCanvas)
                 ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-            var font = "12px ariel";
-            ctx.font = font;
+            var textHeight = 12;
+            ctx.font = textHeight + "px ariel";
+            ctx.lineWidth = 2;
             ctx.textBaseline = "top";
+            ctx.strokeStyle = "#FF0000"; // redd
             boxes.forEach(function (prediction) {
-                // let [x, y, width, height] = prediction.bbox
                 var _a = prediction.bbox, x = _a.x, y = _a.y, width = _a.width, height = _a.height;
                 // Draw the bounding box.
-                ctx.strokeStyle = "#FF0000";
-                ctx.lineWidth = 2;
                 ctx.strokeRect(x, y, width, height);
                 // Draw the label background.
                 var label = (prediction.score * 100).toFixed(0);
-                ctx.fillStyle = "#FF0000";
-                var textWidth = ctx.measureText(label).width * 1.3;
-                var textHeight = parseInt(font, 10);
-                +2;
+                var textDimension = ctx.measureText(label);
+                var textWidth = textDimension.width * 3;
+                ctx.fillStyle = "#FF0000"; // red
                 // draw top left rectangle
                 ctx.fillRect(x, y - 2, textWidth, textHeight);
                 // draw bottom left rectangle
-                ctx.fillRect(x, y + height - textHeight, textWidth, textHeight);
+                ctx.fillRect(x, y + height - textHeight, 30, textHeight);
                 // Draw the text last to ensure  it's on top.
-                ctx.fillStyle = "#ffff";
+                ctx.fillStyle = "#ffff"; // white
                 ctx.fillText(prediction.class, x, y);
                 ctx.fillText(label, x, y + height - textHeight);
             });

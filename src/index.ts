@@ -73,8 +73,8 @@ export default class EfficientDet {
     let detections = await this.model.executeAsync(
       { image_arrays: imageBatch }, "detections") as tf.Tensor
 
-    let predictions = await detections.array()[0] as Array<Array<number>>
 
+    let [predictions] = await detections.array() as Array<Array<Array<number>>>
     tf.dispose(detections)
 
     let detectedObjects: Box[] = []
@@ -107,34 +107,33 @@ export default class EfficientDet {
 
     if (clearCanvas) ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 
-    const font = "12px ariel";
-    ctx.font = font;
+    const textHeight = 12
+    ctx.font = textHeight + "px ariel";
+    ctx.lineWidth = 2;
     ctx.textBaseline = "top";
+    ctx.strokeStyle = "#FF0000"; // redd
 
     boxes.forEach(prediction => {
-      // let [x, y, width, height] = prediction.bbox
       let { x, y, width, height } = prediction.bbox
 
-
       // Draw the bounding box.
-      ctx.strokeStyle = "#FF0000";
-      ctx.lineWidth = 2;
       ctx.strokeRect(x, y, width, height);
 
       // Draw the label background.
-      var label = (prediction.score * 100).toFixed(0)
-      ctx.fillStyle = "#FF0000";
-      const textWidth = ctx.measureText(label).width * 1.3;
-      const textHeight = parseInt(font, 10); + 2
+      const label = (prediction.score * 100).toFixed(0)
+      const textDimension = ctx.measureText(label)
+      const textWidth = textDimension.width * 3;
+
+      ctx.fillStyle = "#FF0000"; // red
 
       // draw top left rectangle
       ctx.fillRect(x, y - 2, textWidth, textHeight);
 
       // draw bottom left rectangle
-      ctx.fillRect(x, y + height - textHeight, textWidth, textHeight);
+      ctx.fillRect(x, y + height - textHeight, 30, textHeight);
 
       // Draw the text last to ensure  it's on top.
-      ctx.fillStyle = "#ffff";
+      ctx.fillStyle = "#ffff"; // white
       ctx.fillText(prediction.class, x, y);
       ctx.fillText(label, x, y + height - textHeight);
     });

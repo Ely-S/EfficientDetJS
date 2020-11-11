@@ -1,6 +1,5 @@
 import { Tensor3D, GraphModel, Tensor4D } from '@tensorflow/tfjs';
 interface EfficientDetOptions {
-    labels: {};
 }
 interface Box {
     score: number;
@@ -19,7 +18,7 @@ export default class EfficientDet {
     modelURI: string;
     model?: GraphModel;
     minScore: number;
-    constructor(options: EfficientDetOptions);
+    constructor(options?: EfficientDetOptions);
     load: () => Promise<void>;
     predict: (image: Tensor3D) => Promise<Box[]>;
     predictBatch: (imageBatch: Tensor4D) => Promise<Box[]>;
