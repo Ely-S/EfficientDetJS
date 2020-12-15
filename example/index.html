@@ -3,6 +3,20 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width">
+  <style>
+    video,
+    #livecanvas {
+      position: absolute;
+      left: 0;
+      top: 0;
+    }
+
+    #timing {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+    }
+  </style>
 </head>
 
 <body>
@@ -11,27 +25,12 @@
 
   <canvas id="livecanvas" width="0" height="0"></canvas>
 
-  <p id="time"></p>
+  <div id="loading">Loading Model. This will take a minute. If your browser can't handle loading the model and
+    crashes, please try again in Firefox 83.</div>
 
-  <div id="loading">Loading</div>
+  <p id="timing">Inference Time: <span id="time"></span> </p>
 
   <script src="./index.ts"></script>
-
-  <style>
-    #blur {
-      width: 300px;
-    }
-
-    video,
-    #livecanvas {
-      position: absolute;
-      left: 0;
-      top: 0;
-
-    }
-
-    video {}
-  </style>
 </body>
 
 </html>
