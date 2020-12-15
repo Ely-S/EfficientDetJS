@@ -61,20 +61,24 @@ var EfficientDet = /** @class */ (function () {
     function EfficientDet(options) {
         var _this = this;
         this.labels = labels;
-        this.modelURI = 'd0/model.json';
+        this.modelURI = 'https://raw.githubusercontent.com/Ely-S/EfficientDetJS/master/hub/efficientdet-d0.js/model.json';
         this.minScore = 0.01;
         this.load = function () { return __awaiter(_this, void 0, void 0, function () {
             var _a;
             return __generator(this, function (_b) {
                 switch (_b.label) {
-                    case 0: return [4 /*yield*/, tf.ready()];
+                    case 0: return [4 /*yield*/, tf.ready()
+                        // only load once
+                    ];
                     case 1:
                         _b.sent();
+                        if (!!this.model) return [3 /*break*/, 3];
                         _a = this;
                         return [4 /*yield*/, tf.loadGraphModel(this.modelURI)];
                     case 2:
                         _a.model = _b.sent();
-                        return [2 /*return*/];
+                        _b.label = 3;
+                    case 3: return [2 /*return*/];
                 }
             });
         }); };
@@ -105,7 +109,7 @@ var EfficientDet = /** @class */ (function () {
                         if (!this.model) {
                             throw new Error("Model not loaded yet, call .load()");
                         }
-                        return [4 /*yield*/, this.model.executeAsync({ image_arrays: imageBatch }, "detections")];
+                        return [4 /*yield*/, this.model.executeAsync(imageBatch, "detections")];
                     case 1:
                         detections = _a.sent();
                         return [4 /*yield*/, detections.array()];

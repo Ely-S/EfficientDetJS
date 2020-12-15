@@ -1,5 +1,6 @@
 
-import * as tf from '@tensorflow/tfjs';
+import * as tf from '@tensorflow/tfjs'
+
 import { Tensor3D, GraphModel, Tensor4D } from '@tensorflow/tfjs';
 
 // Labels for the COCO dataset
@@ -49,7 +50,9 @@ export default class EfficientDet {
 
   load = async () => {
     await tf.ready()
-    this.model = await tf.loadGraphModel(this.modelURI)
+
+    // only load once
+    if (!this.model) this.model = await tf.loadGraphModel(this.modelURI)
   }
 
   predict = async (image: Tensor3D) => {
@@ -68,7 +71,6 @@ export default class EfficientDet {
       throw new Error("Model not loaded yet, call .load()")
     }
 
-    // input imageBatch to placeholder image_arrays
     // get output tensor 'detections'
     let detections = await this.model.executeAsync(
       { image_arrays: imageBatch }, "detections") as tf.Tensor
