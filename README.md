@@ -2,7 +2,7 @@
 
 This library lets you easily deploy a State-of-the-Art EfficientDet model to a tensorflow.js runtime. EfficientDet is a fast, very powerful neural architecture with an active open source [implementation](https://github.com/google/automl) making it a good base for new projects. This library allows you to use a pretrained or custom EfficientDet model without messing with tensorflow.js yourself.
 
-See a live webcam demo [here]().
+[See a live demo](https://ondaka.github.io/EfficientDetJS/example/dist/).
 
 ## Getting Started
 
