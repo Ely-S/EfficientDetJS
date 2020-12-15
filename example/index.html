@@ -11,7 +11,7 @@
       top: 0;
     }
 
-    #timing {
+    #message {
       position: fixed;
       bottom: 0;
       left: 0;
@@ -25,10 +25,14 @@
 
   <canvas id="livecanvas" width="0" height="0"></canvas>
 
-  <div id="loading">Loading Model. This will take a minute. If your browser can't handle loading the model and
-    crashes, please try again in Firefox 83.</div>
+  <div id="message">
+    <p id="loading">
+      Loading Model. This will take a minute. If your browser can't handle loading the model and
+      crashes, please try again in Firefox 83.
+    </p>
 
-  <p id="timing">Inference Time: <span id="time"></span> </p>
+    <p>Inference Time: <span id="time"></span></p>
+  </div>
 
   <script src="./index.ts"></script>
 </body>
