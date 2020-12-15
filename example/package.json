@@ -15,7 +15,7 @@
   },
   "scripts": {
     "start": "parcel index.html",
-    "build": "parcel build --public-url / index.html"
+    "build": "parcel build --public-url /EfficientDetJS/examples/dist/ --out-dir dist index.html"
   },
   "staticFiles": {
     "staticPath": "static",
