@@ -7,17 +7,17 @@ This library lets you easily deploy a State-of-the-Art EfficientDet model to a t
 ## Getting Started
 
 
-        const model = new EfficientDet()
+    const model = new EfficientDet()
 
-        // load the model from tf hub
-        await model.load()
+    // load the model from tf hub
+    await model.load()
 
-        // get an array of object bounding boxes
-        // .predict accepts a a Tensor3D of an image.
-        const predictions = model.predict(image)
+    // get an array of object bounding boxes
+    // .predict accepts a a Tensor3D of an image.
+    const predictions = model.predict(image)
 
-        // draw boxes on canvas
-        model.draw(predictions, document.getElementById("mycanvas))
+    // draw boxes on canvas
+    model.draw(predictions, document.getElementById("mycanvas))
 
 ### Pretrained checkpoint
 
