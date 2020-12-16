@@ -6,7 +6,8 @@ This library lets you easily deploy a State-of-the-Art EfficientDet model to a t
 
 ## Getting Started
 
-
+    import EfficientDet from "EfficientDetJS"
+    
     const model = new EfficientDet()
 
     // load the model from tf hub
