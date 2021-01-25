@@ -25,7 +25,6 @@ const liveCanvasElement = <HTMLCanvasElement>document.getElementById('livecanvas
 const testCanvasElement = <HTMLCanvasElement>document.getElementById('testcanvas');
 
 const blurRadius = <HTMLInputElement>document.getElementById("blur")
-const blurText = <HTMLParagraphElement>document.getElementById("blurtext")
 
 
 var gaussianKernel = getGaussianKernel(13)
@@ -37,12 +36,6 @@ blurRadius.addEventListener("change", function onBlurChange(e) {
   gaussianKernel = getGaussianKernel(value)
 })
 
-// const labels = {
-//   1: 'pick',
-//   2: 'red bob',
-//   4: 'logo',
-//   3: 'vent'
-// }
 
 const camera = tf.data.webcam(videoElement, camConfig);
 
@@ -74,8 +67,6 @@ async function loop() {
 
   const blurredImg = blur(img, gaussianKernel)
   let batch = blurredImg.expandDims()
-
-  // return await tf.browser.toPixels(blurredImg, liveCanvasElement)
 
   console.time("Prediction")
   let result = window.pred = await model.executeAsync({ image_tensor: batch })
@@ -134,7 +125,6 @@ async function start() {
   console.log("Initialized " tf.backend())
 
   model = window.model = await tf.loadGraphModel('zach_model/model.json')
-  // let model = window.model = await tf.loadGraphModel('d0/model.json')
 
   await test(model)
 
