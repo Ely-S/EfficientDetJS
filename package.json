@@ -7,16 +7,17 @@
   "license": "MIT",
   "dependencies": {
     "@babel/preset-env": "^7.7.7",
-    "@tensorflow/tfjs": "^2.0.0",
-    "@tensorflow/tfjs-node": "^2.0.0",
+    "@tensorflow/tfjs": "^1.7.4",
+    "@tensorflow/tfjs-node": "^1.7.4",
     "babel-polyfill": "^6.26.0",
     "mocha": "^7.0.0",
+    "parcel": "^1.12.4",
     "stackblur-canvas": "^2.3.0"
   },
   "scripts": {
-    "dev": "parcel index.html",
-    "build": "parcel build --public-url /e6-p3 index.html",
-    "deploy": "cp -r dist deploy && aws s3 cp --recursive dist  s3://ondaka-dev-bucket/e6-p3 --acl public-read"
+    "start": "parcel index.html",
+    "build": "parcel build --public-url /zach index.html",
+    "deploy": "aws s3 cp --recursive dist  s3://ondaka-dev-bucket/zach --acl public-read"
   },
   "staticFiles": {
     "staticPath": "static",
